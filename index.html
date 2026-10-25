@@ -1,0 +1,1057 @@
+```html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Creador y Gestor de Cuestionarios</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        carrubio: {
+                            50: '#fff1f2',
+                            100: '#ffe4e6',
+                            200: '#fecdd3',
+                            500: '#e11d48',
+                            600: '#be123c',
+                            700: '#9f1239',
+                            800: '#800020', /* Carrubio principal */
+                            900: '#4c0519',
+                            950: '#2b020d'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #fcf8f8;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .bg-carrubio-header {
+            background-color: #800020;
+        }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Header / Navbar -->
+    <header class="bg-carrubio-header text-white shadow-lg sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('my-forms')">
+                <i class="fa-solid fa-square-poll-vertical text-2xl text-rose-200"></i>
+                <div>
+                    <h1 class="font-bold text-xs sm:text-base leading-tight tracking-tight uppercase">GENERADOR DE CUESTIONARIOS DE LA OFICINA DEL CEFOA GNB</h1>
+                    <span class="text-[10px] text-rose-200 block">Gestor y Excel Auto-Sync</span>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button id="admin-nav-forms" onclick="switchTab('my-forms')" class="nav-btn px-3 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-carrubio-700 transition flex items-center space-x-2 bg-carrubio-900">
+                    <i class="fa-solid fa-folder-open"></i>
+                    <span class="hidden sm:inline">Mis Cuestionarios</span>
+                </button>
+                <button id="admin-nav-new" onclick="createNewFormPrompt()" class="nav-btn px-3 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-carrubio-700 transition flex items-center space-x-2 bg-carrubio-700">
+                    <i class="fa-solid fa-plus-circle"></i>
+                    <span>Nuevo</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- TAB 1: Mis Cuestionarios -->
+        <section id="tab-my-forms" class="tab-content block">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 border-b border-rose-100 pb-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-carrubio-950">Mis Cuestionarios</h2>
+                    <p class="text-slate-500 text-xs sm:text-sm">Administra tus formularios, descarga registros en Excel o compártelos por redes.</p>
+                </div>
+                <button onclick="createNewFormPrompt()" class="bg-carrubio-800 hover:bg-carrubio-900 text-white px-4 py-2.5 rounded-lg shadow font-medium text-sm flex items-center space-x-2 transition">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Crear Nuevo Cuestionario</span>
+                </button>
+            </div>
+
+            <!-- Dashboard Grid -->
+            <div id="forms-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Cuestionarios dinámicos -->
+            </div>
+        </section>
+
+        <!-- TAB 2: Crear / Editar Cuestionario -->
+        <section id="tab-create-form" class="tab-content hidden">
+            <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-md border border-rose-100 overflow-hidden">
+                <div class="bg-carrubio-800 text-white p-5 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-xl font-bold" id="editor-title">Diseñar Cuestionario</h2>
+                        <p class="text-xs text-rose-200">Establece el nombre, preguntas y fórmulas de Excel asociadas.</p>
+                    </div>
+                    <button onclick="switchTab('my-forms')" class="text-rose-200 hover:text-white text-lg p-2">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <div class="p-6 space-y-6">
+                    <!-- Configuración Básica -->
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-carrubio-800 tracking-wider mb-1">Nombre del Cuestionario *</label>
+                            <input type="text" id="form-title-input" placeholder="Ej. Registro de Estudiantes 2026" class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-carrubio-800 outline-none transition text-slate-800">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-carrubio-800 tracking-wider mb-1">Descripción o Instrucciones</label>
+                            <textarea id="form-desc-input" rows="2" placeholder="Indicaciones para quienes completan la encuesta..." class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-carrubio-800 outline-none transition text-slate-800 text-sm"></textarea>
+                        </div>
+                    </div>
+
+                    <hr class="border-slate-200">
+
+                    <!-- Campos / Preguntas -->
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-bold text-carrubio-950 text-base flex items-center gap-2">
+                                <i class="fa-solid fa-list-check text-carrubio-800"></i>
+                                Preguntas / Columnas de Datos
+                            </h3>
+                            <button onclick="addField('', 'text', true, [])" class="text-carrubio-800 hover:text-carrubio-950 font-semibold text-xs flex items-center gap-1 bg-rose-50 px-3 py-2 rounded-md hover:bg-rose-100 transition border border-rose-200">
+                                <i class="fa-solid fa-plus"></i> Añadir Pregunta
+                            </button>
+                        </div>
+
+                        <div id="fields-container" class="space-y-3 custom-scrollbar max-h-[400px] overflow-y-auto pr-1">
+                            <!-- Filas de campos dinámicos -->
+                        </div>
+                    </div>
+
+                    <hr class="border-slate-200">
+
+                    <!-- Fórmulas Personalizadas de Excel -->
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="font-bold text-emerald-800 text-base flex items-center gap-2">
+                                <i class="fa-solid fa-file-excel text-emerald-600"></i>
+                                Resumen y Fórmulas Automáticas en Excel
+                            </h3>
+                            <button onclick="addFormula('', '')" class="text-emerald-700 hover:text-emerald-900 font-semibold text-xs flex items-center gap-1 bg-emerald-50 px-3 py-2 rounded-md hover:bg-emerald-100 transition border border-emerald-200">
+                                <i class="fa-solid fa-plus"></i> Agregar Fórmula
+                            </button>
+                        </div>
+                        <p class="text-xs text-slate-500 mb-3">Se incluirán al final del archivo Excel generado. Usa <code class="bg-slate-100 px-1 py-0.5 rounded border">{LAST_ROW}</code> para hacer referencia a la última fila de datos.</p>
+
+                        <div id="formulas-container" class="space-y-3">
+                            <!-- Fórmulas dinámicas -->
+                        </div>
+                    </div>
+
+                    <!-- Botones de Acción -->
+                    <div class="pt-4 flex justify-end space-x-3">
+                        <button onclick="switchTab('my-forms')" class="px-5 py-2.5 rounded-lg border border-slate-300 text-slate-600 font-medium text-sm hover:bg-slate-50 transition">Cancelar</button>
+                        <button onclick="saveForm()" class="px-5 py-2.5 rounded-lg bg-carrubio-800 hover:bg-carrubio-900 text-white font-medium text-sm shadow transition flex items-center gap-2">
+                            <i class="fa-solid fa-floppy-disk"></i>
+                            <span>Guardar Cuestionario</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: Llenar Cuestionario -->
+        <section id="tab-fill-form" class="tab-content hidden">
+            <div class="max-w-2xl mx-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <button id="back-to-admin-btn" onclick="switchTab('my-forms')" class="text-carrubio-800 hover:text-carrubio-950 text-sm font-semibold flex items-center gap-1">
+                        <i class="fa-solid fa-arrow-left"></i> Volver a Panel Administrador
+                    </button>
+                    <span id="public-badge" class="hidden bg-emerald-100 text-emerald-800 text-xs px-2.5 py-1 rounded-full font-semibold border border-emerald-300">
+                        <i class="fa-solid fa-lock text-[10px] mr-1"></i> Modo Respuesta Pública
+                    </span>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-lg border border-rose-100 overflow-hidden">
+                    <div class="bg-carrubio-800 p-6 text-white">
+                        <h2 id="fill-title" class="text-2xl font-bold">Cuestionario</h2>
+                        <p id="fill-desc" class="text-rose-100 text-sm mt-1">Por favor complete la información solicitada.</p>
+                    </div>
+
+                    <form id="public-form" onsubmit="handleFormSubmit(event)" class="p-6 space-y-5">
+                        <div id="fill-fields-container" class="space-y-4">
+                            <!-- Campos a llenar dinámicos -->
+                        </div>
+
+                        <div class="pt-4">
+                            <button type="submit" class="w-full bg-carrubio-800 hover:bg-carrubio-900 text-white font-bold py-3 px-4 rounded-lg shadow transition flex justify-center items-center gap-2 text-base">
+                                <i class="fa-solid fa-paper-plane"></i>
+                                <span>Enviar Respuesta</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: Respuestas y Exportación -->
+        <section id="tab-responses" class="tab-content hidden">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 border-b border-rose-100 pb-4">
+                <div>
+                    <button onclick="switchTab('my-forms')" class="text-carrubio-800 hover:text-carrubio-950 text-xs font-semibold flex items-center gap-1 mb-1">
+                        <i class="fa-solid fa-arrow-left"></i> Volver
+                    </button>
+                    <h2 id="responses-form-title" class="text-2xl font-bold text-carrubio-950">Respuestas del Cuestionario</h2>
+                    <p class="text-slate-500 text-xs sm:text-sm" id="responses-count-subtitle">0 registros almacenados</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="exportToExcel()" class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2.5 rounded-lg shadow font-medium text-sm flex items-center gap-2 transition">
+                        <i class="fa-solid fa-file-excel text-lg"></i>
+                        <span>Descargar Excel / CSV</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabla de Respuestas -->
+            <div class="bg-white rounded-xl shadow border border-slate-200 overflow-hidden">
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left text-sm border-collapse">
+                        <thead id="responses-thead" class="bg-rose-50/50 text-carrubio-900 font-semibold border-b border-slate-200">
+                            <!-- Encabezados -->
+                        </thead>
+                        <tbody id="responses-tbody" class="divide-y divide-slate-200 text-slate-700">
+                            <!-- Filas -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="responses-empty" class="p-8 text-center text-slate-400 hidden">
+                    <i class="fa-solid fa-inbox text-4xl mb-2 text-rose-200"></i>
+                    <p>Aún no hay respuestas registradas para este cuestionario.</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Share Modal -->
+    <div id="share-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl border border-rose-100 relative">
+            <button onclick="closeShareModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-2">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+            <h3 class="text-lg font-bold text-carrubio-950 mb-1" id="share-modal-title">Compartir Cuestionario</h3>
+            <p class="text-xs text-slate-500 mb-4">Configura tu URL base pública para que los encuestados abran únicamente la vista de llenado.</p>
+
+            <div class="mb-4">
+                <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">URL Pública / Servidor Web (Opcional):</label>
+                <input type="text" id="custom-share-url" placeholder="https://tu-sitio.com/cuestionario.html" onchange="saveCustomBaseUrl(this.value)" class="w-full px-3 py-2 border border-slate-300 rounded text-xs outline-none focus:border-carrubio-800">
+                <span class="text-[10px] text-slate-400 mt-1 block">Si lo alojas en un servidor (GitHub Pages, Netlify, Vercel), coloca el link aquí.</span>
+            </div>
+
+            <div class="space-y-3">
+                <!-- WhatsApp -->
+                <button onclick="shareViaWhatsApp()" class="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-semibold py-3 px-4 rounded-lg flex items-center justify-between transition">
+                    <span class="flex items-center gap-3">
+                        <i class="fa-brands fa-whatsapp text-2xl text-emerald-600"></i>
+                        <span>Compartir en WhatsApp</span>
+                    </span>
+                    <i class="fa-solid fa-chevron-right text-xs"></i>
+                </button>
+
+                <!-- Telegram -->
+                <button onclick="shareViaTelegram()" class="w-full bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 font-semibold py-3 px-4 rounded-lg flex items-center justify-between transition">
+                    <span class="flex items-center gap-3">
+                        <i class="fa-brands fa-telegram text-2xl text-sky-500"></i>
+                        <span>Compartir en Telegram</span>
+                    </span>
+                    <i class="fa-solid fa-chevron-right text-xs"></i>
+                </button>
+
+                <!-- Copiar Enlace -->
+                <button onclick="copyFormLink()" class="w-full bg-slate-50 hover:bg-slate-100 text-slate-800 border border-slate-200 font-semibold py-3 px-4 rounded-lg flex items-center justify-between transition">
+                    <span class="flex items-center gap-3">
+                        <i class="fa-solid fa-link text-xl text-slate-600"></i>
+                        <span>Copiar Enlace de Llenado Directo</span>
+                    </span>
+                    <i class="fa-solid fa-copy text-xs"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast / Notificaciones -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 transition-all duration-300 opacity-0 pointer-events-none translate-y-2 z-50">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+        <span id="toast-message" class="text-sm font-medium">Notificación</span>
+    </div>
+
+    <!-- Script de Compatibilidad Alta y Respaldo Memoria -->
+    <script>
+        var forms = [];
+        var currentFormId = null;
+        var editingFormId = null;
+        var customBaseUrl = '';
+
+        // Lista completa de los 23 Estados de Venezuela + Dto. Capital + Dependencias Federales
+        var estadosVenezuela = [
+            "Distrito Capital", "Amazonas", "Anzoátegui", "Apure", "Aragua", "Barinas", 
+            "Bolívar", "Carabobo", "Cojedes", "Delta Amacuro", "Dependencias Federales", 
+            "Falcón", "Guárico", "Lara", "Mérida", "Miranda", "Monagas", "Nueva Esparta", 
+            "Portuguesa", "Sucre", "Táchira", "Trujillo", "La Guaira", "Yaracuy", "Zulia", "Otro"
+        ];
+
+        // Lista representativa y diversa de carreras universitarias
+        var carrerasVenezuela = [
+            "Ingeniería Informática / Sistemas", "Ingeniería Civil", "Ingeniería Industrial", 
+            "Ingeniería Mecánica", "Ingeniería Eléctrica", "Ingeniería Química",
+            "Medicina", "Enfermería", "Odontología", "Farmacia", "Bioanálisis",
+            "Derecho / Ciencias Jurídicas", "Administración de Empresas", "Contaduría Pública",
+            "Economía", "Relaciones Industriales", "Educación / Pedagogía", "Psicología",
+            "Arquitectura", "Comunicación Social", "Sociología / Trabajo Social",
+            "Ciencias Policiales / Militares", "Agronomía / Veterinaria", "Otra"
+        ];
+
+        // Cuestionario inicial obligatorio totalmente completo
+        var initialForm = {
+            id: 'form-estudiantes-cefoa',
+            title: 'Registro General de Estudiantes - CEFOA GNB',
+            description: 'Recolección detallada de datos personales, académicos y de localización institucional.',
+            createdAt: '2026-10-25',
+            fields: [
+                { id: 'f1', label: 'Nombre y Apellido', type: 'text', required: true },
+                { id: 'f2', label: 'Cédula de Identidad', type: 'text', required: true },
+                { id: 'f3', label: 'Matrícula / N° de Expediente', type: 'text', required: true },
+                { id: 'f4', label: 'Estado de Residencia', type: 'select', options: estadosVenezuela, required: true },
+                { id: 'f5', label: 'Carrera / Especialidad', type: 'select', options: carrerasVenezuela, required: true }
+            ],
+            formulas: [
+                { label: 'Total Registrados', formula: '=COUNTA(A2:A{LAST_ROW})' }
+            ],
+            responses: [
+                {
+                    f1: 'Carlos Eduardo Mendoza',
+                    f2: 'V-25123456',
+                    f3: 'CEFOA-2026-001',
+                    f4: 'Distrito Capital',
+                    f5: 'Ingeniería Informática / Sistemas',
+                    submittedAt: '2026-10-25 09:15'
+                },
+                {
+                    f1: 'María Alejandra Gómez',
+                    f2: 'V-26987654',
+                    f3: 'CEFOA-2026-002',
+                    f4: 'Zulia',
+                    f5: 'Derecho / Ciencias Jurídicas',
+                    submittedAt: '2026-10-25 09:30'
+                }
+            ]
+        };
+
+        // Inicialización segura
+        function initApp() {
+            loadFromStorage();
+            if (!forms || forms.length === 0) {
+                forms = [initialForm];
+            }
+            
+            // Verificar si entra con enlace público (ej. ?fill=1&id=form-estudiantes-cefoa)
+            checkUrlParams();
+        }
+
+        function checkUrlParams() {
+            var urlParams = new URLSearchParams(window.location.search);
+            var fillMode = urlParams.get('fill');
+            var targetId = urlParams.get('id');
+
+            if (fillMode === '1' && targetId) {
+                // Modo Vista de Usuario Llenado Directo
+                enablePublicFillMode(targetId);
+            } else {
+                renderFormsGrid();
+            }
+        }
+
+        function enablePublicFillMode(formId) {
+            // Ocultar botones e interfaces de administración
+            var headerBtns = document.getElementById('admin-nav-forms');
+            var newBtn = document.getElementById('admin-nav-new');
+            var backBtn = document.getElementById('back-to-admin-btn');
+            var publicBadge = document.getElementById('public-badge');
+
+            if (headerBtns) headerBtns.classList.add('hidden');
+            if (newBtn) newBtn.classList.add('hidden');
+            if (backBtn) backBtn.classList.add('hidden');
+            if (publicBadge) publicBadge.classList.remove('hidden');
+
+            openFillForm(formId);
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initApp);
+        } else {
+            initApp();
+        }
+
+        window.onload = function() {
+            if (!forms || forms.length === 0) {
+                initApp();
+            }
+        };
+
+        function loadFromStorage() {
+            try {
+                var stored = localStorage.getItem('carrubio_forms_db');
+                if (stored) {
+                    var parsed = JSON.parse(stored);
+                    if (parsed && parsed.length > 0) {
+                        forms = parsed;
+                    }
+                }
+                customBaseUrl = localStorage.getItem('carrubio_base_url') || '';
+                var urlInput = document.getElementById('custom-share-url');
+                if (urlInput) urlInput.value = customBaseUrl;
+            } catch (e) {
+                console.warn("LocalStorage no disponible. Usando memoria temporal.", e);
+            }
+        }
+
+        function saveToStorage() {
+            try {
+                localStorage.setItem('carrubio_forms_db', JSON.stringify(forms));
+            } catch (e) {
+                console.warn("No se pudo persistir en localStorage. Se mantendrá en esta sesión.", e);
+            }
+        }
+
+        function saveCustomBaseUrl(val) {
+            customBaseUrl = val ? val.trim() : '';
+            try {
+                localStorage.setItem('carrubio_base_url', customBaseUrl);
+            } catch (e) {}
+        }
+
+        function switchTab(tabId) {
+            var tabs = document.querySelectorAll('.tab-content');
+            for (var i = 0; i < tabs.length; i++) {
+                tabs[i].classList.add('hidden');
+                tabs[i].classList.remove('block');
+            }
+            var target = document.getElementById('tab-' + tabId);
+            if (target) {
+                target.classList.remove('hidden');
+                target.classList.add('block');
+            }
+
+            if (tabId === 'my-forms') renderFormsGrid();
+            if (tabId === 'create-form' && !editingFormId) resetFormEditor();
+        }
+
+        function renderFormsGrid() {
+            var grid = document.getElementById('forms-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+
+            if (!forms || forms.length === 0) {
+                grid.innerHTML = '<div class="col-span-full text-center py-12 text-slate-400">No hay cuestionarios guardados. ¡Haz clic en "Crear Nuevo" para empezar!</div>';
+                return;
+            }
+
+            for (var i = 0; i < forms.length; i++) {
+                var form = forms[i];
+                var respCount = (form.responses && form.responses.length) ? form.responses.length : 0;
+                var createdDate = form.createdAt ? form.createdAt : 'Reciente';
+
+                var card = document.createElement('div');
+                card.className = 'bg-white rounded-xl border border-rose-100 shadow-sm hover:shadow-md transition p-5 flex flex-col justify-between';
+                
+                card.innerHTML = 
+                    '<div>' +
+                        '<div class="flex justify-between items-start mb-2">' +
+                            '<h3 class="font-bold text-carrubio-950 text-lg line-clamp-1">' + escapeHtml(form.title) + '</h3>' +
+                            '<span class="bg-rose-50 text-carrubio-800 text-xs font-bold px-2.5 py-1 rounded-full border border-rose-200">' +
+                                respCount + ' Respuestas' +
+                            '</span>' +
+                        '</div>' +
+                        '<p class="text-slate-500 text-xs mb-4 line-clamp-2">' + escapeHtml(form.description || 'Sin descripción disponible') + '</p>' +
+                        '<div class="text-xs text-slate-400 space-y-1 mb-4">' +
+                            '<p><i class="fa-regular fa-list-alt mr-1"></i> ' + (form.fields ? form.fields.length : 0) + ' Preguntas / Columnas</p>' +
+                            '<p><i class="fa-regular fa-calendar mr-1"></i> Creado: ' + createdDate + '</p>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="pt-3 border-t border-rose-50 flex items-center justify-between gap-1 text-xs">' +
+                        '<button onclick="openFillForm(\'' + form.id + '\')" class="text-carrubio-800 hover:bg-rose-50 p-2 rounded-lg font-semibold transition flex items-center gap-1" title="Responder">' +
+                            '<i class="fa-solid fa-pen-to-square"></i> Llenar' +
+                        '</button>' +
+                        '<button onclick="viewResponses(\'' + form.id + '\')" class="text-emerald-700 hover:bg-emerald-50 p-2 rounded-lg font-semibold transition flex items-center gap-1" title="Respuestas">' +
+                            '<i class="fa-solid fa-table"></i> Datos' +
+                        '</button>' +
+                        '<button onclick="openShareModal(\'' + form.id + '\')" class="text-sky-600 hover:bg-sky-50 p-2 rounded-lg font-semibold transition flex items-center gap-1" title="Compartir">' +
+                            '<i class="fa-solid fa-share-nodes"></i> Enviar' +
+                        '</button>' +
+                        '<button onclick="editForm(\'' + form.id + '\')" class="text-slate-500 hover:bg-slate-100 p-2 rounded-lg transition" title="Editar">' +
+                            '<i class="fa-solid fa-gear"></i>' +
+                        '</button>' +
+                        '<button onclick="deleteForm(\'' + form.id + '\')" class="text-rose-600 hover:bg-rose-50 p-2 rounded-lg transition" title="Eliminar">' +
+                            '<i class="fa-solid fa-trash-can"></i>' +
+                        '</button>' +
+                    '</div>';
+
+                grid.appendChild(card);
+            }
+        }
+
+        function createNewFormPrompt() {
+            editingFormId = null;
+            resetFormEditor();
+            switchTab('create-form');
+        }
+
+        function resetFormEditor() {
+            editingFormId = null;
+            document.getElementById('editor-title').innerText = 'Diseñar Nuevo Cuestionario';
+            document.getElementById('form-title-input').value = '';
+            document.getElementById('form-desc-input').value = '';
+            document.getElementById('fields-container').innerHTML = '';
+            document.getElementById('formulas-container').innerHTML = '';
+
+            // Preguntas por defecto precargadas con las listas completas
+            addField('Nombre y Apellido', 'text', true, []);
+            addField('Cédula de Identidad', 'text', true, []);
+            addField('Matrícula / N° de Expediente', 'text', true, []);
+            addField('Estado de Residencia', 'select', true, estadosVenezuela);
+            addField('Carrera / Especialidad', 'select', true, carrerasVenezuela);
+
+            addFormula('Total Registros', '=COUNTA(A2:A{LAST_ROW})');
+        }
+
+        function addField(label, type, required, options) {
+            label = label || '';
+            type = type || 'text';
+            required = required !== undefined ? required : false;
+            options = options || [];
+
+            var container = document.getElementById('fields-container');
+            var fieldId = 'f_' + new Date().getTime() + '_' + Math.floor(Math.random() * 1000);
+
+            var div = document.createElement('div');
+            div.className = 'field-item bg-rose-50/40 border border-rose-100 p-3 rounded-lg flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between';
+            div.setAttribute('data-id', fieldId);
+
+            var optsVal = options.join(', ');
+            var isSelect = (type === 'select');
+
+            div.innerHTML = 
+                '<div class="flex-1 w-full sm:w-auto">' +
+                    '<input type="text" value="' + escapeHtml(label) + '" placeholder="Pregunta o campo requerida" class="field-label w-full px-3 py-1.5 border border-slate-300 rounded text-sm outline-none focus:border-carrubio-800">' +
+                '</div>' +
+                '<div class="w-full sm:w-36">' +
+                    '<select class="field-type w-full px-2 py-1.5 border border-slate-300 rounded text-sm bg-white" onchange="toggleOptionsInput(this)">' +
+                        '<option value="text"' + (type==='text'?' selected':'') + '>Texto</option>' +
+                        '<option value="number"' + (type==='number'?' selected':'') + '>Número</option>' +
+                        '<option value="select"' + (type==='select'?' selected':'') + '>Selección</option>' +
+                        '<option value="date"' + (type==='date'?' selected':'') + '>Fecha</option>' +
+                    '</select>' +
+                '</div>' +
+                '<div class="field-options-wrap flex-1 w-full sm:w-auto ' + (isSelect ? '' : 'hidden') + '">' +
+                    '<input type="text" value="' + escapeHtml(optsVal) + '" placeholder="Opciones (separadas por coma)" class="field-options w-full px-3 py-1.5 border border-slate-300 rounded text-sm outline-none">' +
+                '</div>' +
+                '<div class="flex items-center space-x-3 text-xs">' +
+                    '<label class="flex items-center gap-1 cursor-pointer">' +
+                        '<input type="checkbox" class="field-required rounded text-carrubio-800 focus:ring-carrubio-800"' + (required ? ' checked' : '') + '>' +
+                        '<span>Obligatorio</span>' +
+                    '</label>' +
+                    '<button type="button" onclick="removeParentItem(this)" class="text-rose-600 hover:text-rose-800 p-1">' +
+                        '<i class="fa-solid fa-trash"></i>' +
+                    '</button>' +
+                '</div>';
+
+            container.appendChild(div);
+        }
+
+        function toggleOptionsInput(selectEl) {
+            var parent = selectEl.parentNode.parentNode;
+            var wrap = parent.querySelector('.field-options-wrap');
+            if (selectEl.value === 'select') {
+                wrap.classList.remove('hidden');
+            } else {
+                wrap.classList.add('hidden');
+            }
+        }
+
+        function addFormula(label, formula) {
+            label = label || '';
+            formula = formula || '';
+
+            var container = document.getElementById('formulas-container');
+            var div = document.createElement('div');
+            div.className = 'formula-item bg-emerald-50/50 border border-emerald-200 p-3 rounded-lg flex flex-col sm:flex-row gap-3 items-center justify-between';
+
+            div.innerHTML = 
+                '<div class="w-full sm:w-1/3">' +
+                    '<input type="text" value="' + escapeHtml(label) + '" placeholder="Etiqueta (ej. Total Registros)" class="formula-label w-full px-3 py-1.5 border border-slate-300 rounded text-sm outline-none">' +
+                '</div>' +
+                '<div class="w-full sm:w-2/3 flex items-center gap-2">' +
+                    '<input type="text" value="' + escapeHtml(formula) + '" placeholder="Fórmula (ej. =COUNTA(A2:A{LAST_ROW}))" class="formula-code w-full px-3 py-1.5 border border-slate-300 rounded text-sm font-mono text-emerald-800 outline-none">' +
+                    '<button type="button" onclick="removeParentItem(this)" class="text-rose-600 hover:text-rose-800 p-1">' +
+                        '<i class="fa-solid fa-trash"></i>' +
+                    '</button>' +
+                '</div>';
+
+            container.appendChild(div);
+        }
+
+        function removeParentItem(btn) {
+            var item = btn.parentNode;
+            while (item && !item.classList.contains('field-item') && !item.classList.contains('formula-item')) {
+                item = item.parentNode;
+            }
+            if (item) item.parentNode.removeChild(item);
+        }
+
+        function saveForm() {
+            var title = document.getElementById('form-title-input').value.trim();
+            var description = document.getElementById('form-desc-input').value.trim();
+
+            if (!title) {
+                showToast('Introduce un título para el cuestionario', 'error');
+                return;
+            }
+
+            var fieldElems = document.querySelectorAll('.field-item');
+            if (fieldElems.length === 0) {
+                showToast('Agrega al menos una pregunta', 'error');
+                return;
+            }
+
+            var fields = [];
+            for (var i = 0; i < fieldElems.length; i++) {
+                var el = fieldElems[i];
+                var fLabel = el.querySelector('.field-label').value.trim() || ('Pregunta ' + (i + 1));
+                var fType = el.querySelector('.field-type').value;
+                var fReq = el.querySelector('.field-required').checked;
+                var fOptsRaw = el.querySelector('.field-options').value;
+                var fOpts = [];
+
+                if (fOptsRaw) {
+                    var splitted = fOptsRaw.split(',');
+                    for (var j = 0; j < splitted.length; j++) {
+                        var clean = splitted[j].trim();
+                        if (clean.length > 0) fOpts.push(clean);
+                    }
+                }
+
+                fields.push({
+                    id: el.getAttribute('data-id') || ('f_' + i + '_' + new Date().getTime()),
+                    label: fLabel,
+                    type: fType,
+                    required: fReq,
+                    options: fOpts
+                });
+            }
+
+            var formulaElems = document.querySelectorAll('.formula-item');
+            var formulas = [];
+            for (var k = 0; k < formulaElems.length; k++) {
+                var fEl = formulaElems[k];
+                var fLab = fEl.querySelector('.formula-label').value.trim();
+                var fCode = fEl.querySelector('.formula-code').value.trim();
+                if (fLab && fCode) {
+                    formulas.push({ label: fLab, formula: fCode });
+                }
+            }
+
+            if (editingFormId) {
+                for (var idx = 0; idx < forms.length; idx++) {
+                    if (forms[idx].id === editingFormId) {
+                        forms[idx].title = title;
+                        forms[idx].description = description;
+                        forms[idx].fields = fields;
+                        forms[idx].formulas = formulas;
+                        break;
+                    }
+                }
+            } else {
+                var newForm = {
+                    id: 'form_' + new Date().getTime(),
+                    title: title,
+                    description: description,
+                    createdAt: new Date().toISOString().split('T')[0],
+                    fields: fields,
+                    formulas: formulas,
+                    responses: []
+                };
+                forms.push(newForm);
+            }
+
+            saveToStorage();
+            showToast('¡Cuestionario guardado con éxito!');
+            switchTab('my-forms');
+        }
+
+        function editForm(formId) {
+            var form = getFormById(formId);
+            if (!form) return;
+
+            editingFormId = formId;
+            document.getElementById('editor-title').innerText = 'Editar Cuestionario';
+            document.getElementById('form-title-input').value = form.title;
+            document.getElementById('form-desc-input').value = form.description || '';
+
+            document.getElementById('fields-container').innerHTML = '';
+            for (var i = 0; i < form.fields.length; i++) {
+                var f = form.fields[i];
+                addField(f.label, f.type, f.required, f.options);
+            }
+
+            document.getElementById('formulas-container').innerHTML = '';
+            if (form.formulas) {
+                for (var j = 0; j < form.formulas.length; j++) {
+                    var fm = form.formulas[j];
+                    addFormula(fm.label, fm.formula);
+                }
+            }
+
+            switchTab('create-form');
+        }
+
+        function deleteForm(formId) {
+            if (confirm('¿Deseas eliminar este cuestionario y todas sus respuestas guardadas?')) {
+                var newArr = [];
+                for (var i = 0; i < forms.length; i++) {
+                    if (forms[i].id !== formId) newArr.push(forms[i]);
+                }
+                forms = newArr;
+                saveToStorage();
+                renderFormsGrid();
+                showToast('Cuestionario eliminado');
+            }
+        }
+
+        function handleCustomOptionToggle(selectEl, customInputId) {
+            var customInput = document.getElementById(customInputId);
+            if (!customInput) return;
+
+            var val = selectEl.value.toLowerCase();
+            if (val === 'otro' || val === 'otra') {
+                customInput.classList.remove('hidden');
+                customInput.required = true;
+                customInput.focus();
+            } else {
+                customInput.classList.add('hidden');
+                customInput.required = false;
+                customInput.value = '';
+            }
+        }
+
+        function openFillForm(formId) {
+            currentFormId = formId;
+            var form = getFormById(formId);
+            if (!form) return;
+
+            document.getElementById('fill-title').innerText = form.title;
+            document.getElementById('fill-desc').innerText = form.description || 'Por favor completa la información.';
+
+            var container = document.getElementById('fill-fields-container');
+            container.innerHTML = '';
+
+            for (var i = 0; i < form.fields.length; i++) {
+                var field = form.fields[i];
+                var div = document.createElement('div');
+                div.className = 'space-y-1';
+
+                var reqAttr = field.required ? 'required' : '';
+                var reqStar = field.required ? '<span class="text-rose-600 font-bold">*</span>' : '';
+                var inputHtml = '';
+                var customInputId = 'custom_' + field.id;
+
+                if (field.type === 'select') {
+                    var optsHtml = '<option value="">-- Seleccionar opción --</option>';
+                    if (field.options) {
+                        for (var j = 0; j < field.options.length; j++) {
+                            optsHtml += '<option value="' + escapeHtml(field.options[j]) + '">' + escapeHtml(field.options[j]) + '</option>';
+                        }
+                    }
+                    inputHtml = 
+                        '<select name="' + field.id + '" ' + reqAttr + ' onchange="handleCustomOptionToggle(this, \'' + customInputId + '\')" class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-carrubio-800 outline-none text-slate-800 bg-white">' + 
+                            optsHtml + 
+                        '</select>' +
+                        '<input type="text" id="' + customInputId + '" name="' + customInputId + '" placeholder="Especificar manualmente cual..." class="w-full mt-2 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-carrubio-800 outline-none text-slate-800 hidden text-sm bg-rose-50/50">';
+                } else if (field.type === 'number') {
+                    inputHtml = '<input type="number" name="' + field.id + '" ' + reqAttr + ' class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-carrubio-800 outline-none text-slate-800">';
+                } else if (field.type === 'date') {
+                    inputHtml = '<input type="date" name="' + field.id + '" ' + reqAttr + ' class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-carrubio-800 outline-none text-slate-800">';
+                } else {
+                    inputHtml = '<input type="text" name="' + field.id + '" ' + reqAttr + ' class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-carrubio-800 outline-none text-slate-800">';
+                }
+
+                div.innerHTML = '<label class="block text-sm font-semibold text-slate-700">' + escapeHtml(field.label) + ' ' + reqStar + '</label>' + inputHtml;
+                container.appendChild(div);
+            }
+
+            switchTab('fill-form');
+        }
+
+        function handleFormSubmit(e) {
+            if (e.preventDefault) e.preventDefault();
+
+            var formObj = getFormById(currentFormId);
+            if (!formObj) return false;
+
+            var formElem = document.getElementById('public-form');
+            var responseData = {
+                submittedAt: new Date().toLocaleString()
+            };
+
+            for (var i = 0; i < formObj.fields.length; i++) {
+                var field = formObj.fields[i];
+                var input = formElem.elements[field.id];
+                var val = input ? input.value : '';
+
+                if (field.type === 'select' && (val.toLowerCase() === 'otro' || val.toLowerCase() === 'otra')) {
+                    var customInput = formElem.elements['custom_' + field.id];
+                    if (customInput && customInput.value.trim().length > 0) {
+                        val = customInput.value.trim() + ' (Especificado)';
+                    }
+                }
+
+                responseData[field.id] = val;
+            }
+
+            if (!formObj.responses) formObj.responses = [];
+            formObj.responses.push(responseData);
+
+            saveToStorage();
+            formElem.reset();
+            showToast('¡Respuesta registrada exitosamente!');
+            
+            // Si está en modo público, mostrar mensaje de agradecimiento
+            var urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('fill') === '1') {
+                var container = document.getElementById('fill-fields-container');
+                container.innerHTML = '<div class="text-center py-8"><i class="fa-solid fa-circle-check text-5xl text-emerald-600 mb-3 block"></i><h3 class="text-xl font-bold text-slate-800 mb-1">¡Gracias por tu tiempo!</h3><p class="text-sm text-slate-500">Tus respuestas han sido enviadas correctamente.</p></div>';
+                formElem.querySelector('button[type="submit"]').classList.add('hidden');
+            } else {
+                switchTab('my-forms');
+            }
+            return false;
+        }
+
+        function viewResponses(formId) {
+            currentFormId = formId;
+            var form = getFormById(formId);
+            if (!form) return;
+
+            document.getElementById('responses-form-title').innerText = form.title;
+            var count = form.responses ? form.responses.length : 0;
+            document.getElementById('responses-count-subtitle').innerText = count + ' registros almacenados';
+
+            var thead = document.getElementById('responses-thead');
+            var tbody = document.getElementById('responses-tbody');
+            var emptyState = document.getElementById('responses-empty');
+
+            thead.innerHTML = '';
+            tbody.innerHTML = '';
+
+            if (count === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+
+                var headerRow = '<tr class="border-b border-slate-200"><th class="py-3 px-4 text-xs font-bold uppercase tracking-wider text-carrubio-900">#</th>';
+                for (var i = 0; i < form.fields.length; i++) {
+                    headerRow += '<th class="py-3 px-4 text-xs font-bold uppercase tracking-wider text-carrubio-900">' + escapeHtml(form.fields[i].label) + '</th>';
+                }
+                headerRow += '<th class="py-3 px-4 text-xs font-bold uppercase tracking-wider text-carrubio-900">Fecha</th></tr>';
+                thead.innerHTML = headerRow;
+
+                for (var r = 0; r < form.responses.length; r++) {
+                    var resp = form.responses[r];
+                    var row = '<tr class="hover:bg-rose-50/30 transition"><td class="py-3 px-4 font-mono text-xs text-slate-400">' + (r + 1) + '</td>';
+                    for (var f = 0; f < form.fields.length; f++) {
+                        var fieldId = form.fields[f].id;
+                        row += '<td class="py-3 px-4 text-sm text-slate-700">' + escapeHtml(resp[fieldId] || '-') + '</td>';
+                    }
+                    row += '<td class="py-3 px-4 text-xs text-slate-400 font-mono">' + (resp.submittedAt || '-') + '</td></tr>';
+                    tbody.innerHTML += row;
+                }
+            }
+
+            switchTab('responses');
+        }
+
+        // Generación nativa CSV / Excel totalmente compatible con Windows Antigua, iOS y Android
+        function exportToExcel() {
+            var form = getFormById(currentFormId);
+            if (!form) return;
+
+            var csvContent = "";
+            var headers = [];
+
+            for (var i = 0; i < form.fields.length; i++) {
+                headers.push(cleanCsvValue(form.fields[i].label));
+            }
+            headers.push(cleanCsvValue("Fecha de Registro"));
+            csvContent += headers.join(";") + "\r\n";
+
+            var responses = form.responses || [];
+            for (var r = 0; r < responses.length; r++) {
+                var row = [];
+                var resp = responses[r];
+                for (var f = 0; f < form.fields.length; f++) {
+                    row.push(cleanCsvValue(resp[form.fields[f].id] || ''));
+                }
+                row.push(cleanCsvValue(resp.submittedAt || ''));
+                csvContent += row.join(";") + "\r\n";
+            }
+
+            var lastDataRowIndex = responses.length + 1; // 1 para la fila de cabecera
+
+            csvContent += "\r\n"; // Fila en blanco
+
+            if (form.formulas && form.formulas.length > 0) {
+                csvContent += cleanCsvValue("--- RESUMEN Y FÓRMULAS ---") + "\r\n";
+                for (var fm = 0; fm < form.formulas.length; fm++) {
+                    var item = form.formulas[fm];
+                    var parsedFormula = item.formula.replace(/\{LAST_ROW\}/g, lastDataRowIndex);
+                    csvContent += cleanCsvValue(item.label) + ";" + cleanCsvValue(parsedFormula) + "\r\n";
+                }
+            }
+
+            // Descargar con codificación BOM para compatibilidad total con Excel
+            var blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
+            var fileName = (form.title || 'cuestionario').replace(/[^a-z0-9]/gi, '_').toLowerCase() + '_respuestas.csv';
+
+            if (navigator.msSaveBlob) { // IE 10+ / PCs antiguas
+                navigator.msSaveBlob(blob, fileName);
+            } else {
+                var link = document.createElement("a");
+                if (link.download !== undefined) {
+                    var url = URL.createObjectURL(blob);
+                    link.setAttribute("href", url);
+                    link.setAttribute("download", fileName);
+                    link.style.visibility = 'hidden';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+            }
+
+            showToast('Archivo Excel/CSV descargado');
+        }
+
+        function cleanCsvValue(val) {
+            if (val === null || val === undefined) return '""';
+            var str = val.toString().replace(/"/g, '""');
+            return '"' + str + '"';
+        }
+
+        // Compartir
+        function openShareModal(formId) {
+            currentFormId = formId;
+            var form = getFormById(formId);
+            if (form) {
+                document.getElementById('share-modal-title').innerText = 'Compartir: ' + form.title;
+                document.getElementById('share-modal').classList.remove('hidden');
+            }
+        }
+
+        function closeShareModal() {
+            document.getElementById('share-modal').classList.add('hidden');
+        }
+
+        function getPublicLink() {
+            var base = customBaseUrl ? customBaseUrl : window.location.href.split('?')[0].split('#')[0];
+            return base + '?fill=1&id=' + currentFormId;
+        }
+
+        function getShareText() {
+            var form = getFormById(currentFormId);
+            var title = form ? form.title : 'Cuestionario';
+            return '¡Hola! Te invito a responder el siguiente cuestionario: *' + title + '*';
+        }
+
+        function shareViaWhatsApp() {
+            var link = getPublicLink();
+            var text = encodeURIComponent(getShareText() + '\n\nPuedes responderlo ingresando a este enlace:\n' + link);
+            window.open('https://api.whatsapp.com/send?text=' + text, '_blank');
+        }
+
+        function shareViaTelegram() {
+            var link = getPublicLink();
+            var text = encodeURIComponent(getShareText() + '\n\n' + link);
+            window.open('https://t.me/share/url?url=' + encodeURIComponent(link) + '&text=' + text, '_blank');
+        }
+
+        function copyFormLink() {
+            var link = getPublicLink();
+            var text = getShareText() + '\n\n' + link;
+            var dummy = document.createElement("textarea");
+            document.body.appendChild(dummy);
+            dummy.value = text;
+            dummy.select();
+            document.execCommand("copy");
+            document.body.removeChild(dummy);
+            showToast('Enlace de llenado copiado al portapapeles');
+            closeShareModal();
+        }
+
+        // Utilitarios
+        function getFormById(id) {
+            for (var i = 0; i < forms.length; i++) {
+                if (forms[i].id === id) return forms[i];
+            }
+            return null;
+        }
+
+        function showToast(message, type) {
+            var toast = document.getElementById('toast');
+            var msgEl = document.getElementById('toast-message');
+            var iconEl = document.getElementById('toast-icon');
+
+            msgEl.innerText = message;
+            if (type === 'error') {
+                iconEl.className = 'fa-solid fa-circle-exclamation text-rose-300';
+            } else {
+                iconEl.className = 'fa-solid fa-circle-check text-emerald-400';
+            }
+
+            toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-2');
+            toast.classList.add('opacity-100', 'translate-y-0');
+
+            setTimeout(function() {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-2');
+            }, 3000);
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text.toString()
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
+```
